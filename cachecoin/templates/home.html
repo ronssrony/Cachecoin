@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h1>Live Crypto Price Updates</h1>
+    <div id="cryptoPrices"></div>
+
+    <script>
+        function fetchCryptoPrices() {
+
+            const API_KEY = '45A266A7-3ECD-441F-88C1-DEA1D83C6CB8';
+
+            const cryptocurrencies = ['SOL', 'ADA', 'ETH', 'DOT', 'BTC', 'XRP', 'LTC', 'LINK', 'BCH', 'XLM'];
+
+            const baseURL = 'https://rest.coinapi.io/v1/exchangerate/';
+
+            const headers = {'X-CoinAPI-Key': API_KEY};
+
+            let pricesHTML = '';
+
+            cryptocurrencies.forEach(crypto => {
+
+                const url = `${baseURL}${crypto}/USD`;
+                fetch(url, {headers})
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.rate !== undefined) {
+                            const exchangeRate = data.rate;
+                            pricesHTML += `<p>Current ${crypto}/USD Exchange Rate: ${exchangeRate}</p>`;
+                            document.getElementById('cryptoPrices').innerHTML = pricesHTML;
+                        } else {
+                            console.warn(`${crypto}/USD exchange rate is undefined.`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching ${crypto} price:`, error);
+                    });
+            });
+        }
+
+        fetchCryptoPrices();
+        setInterval(fetchCryptoPrices, 5000);
+    </script>
+
+{% endblock content %}
