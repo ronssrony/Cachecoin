@@ -22,6 +22,7 @@
                 fetch(url, {headers})
                     .then(response => response.json())
                     .then(data => {
+                        
                         if (data.rate !== undefined) {
                             const exchangeRate = data.rate;
                             pricesHTML += `<p>Current ${crypto}/USD Exchange Rate: ${exchangeRate}</p>`;

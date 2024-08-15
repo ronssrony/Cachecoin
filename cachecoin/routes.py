@@ -27,18 +27,22 @@ def blockchain():
 def transaction():
     form = TransactionForm()
     formNL = TransactionFormNotLoggedIn()
+    personblc = blockchainObj.getBalance(form.sender.data)
     # print(form.sender.data, form.reciever.data, form.amount.data, form.key.data);
-    # print("hi");
+     
+    
     if form.validate_on_submit():
-        print("hi")
+       
         # print(form.sender.data, form.reciever.data, form.amount.data, form.key.data);
         # print(type(form.key.data));
+        count = 1 
+        print(count+1)
         feedback = blockchainObj.addTransaction(form.sender.data, form.reciever.data, form.amount.data, form.key.data,
-                                                form.key.data)
+                                                form.key.data ,personblc )
         if feedback:
             flash(f'Transaction Made!', 'success')
         else:
-            flash(f'Error!', 'danger')
+            flash(f'Insufficient funds', 'danger')
         return render_template('transaction.html', title="Transaction", blockchain=blockchainObj, form=form,
                                formNL=formNL)
 
@@ -120,6 +124,7 @@ def mine():
 
     if len(blockchainObj.pendingTransactions) == 1:  # Check if there is exactly one pending transaction
         feedback = blockchainObj.minePendingTransactions(miner)
+        
         if feedback:
             flash(f'Block Mined! Your mining reward has now been added to the pending transactions!', 'success')
         else:

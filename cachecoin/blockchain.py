@@ -20,6 +20,7 @@ class Blockchain (object):
 		self.minerRewards = 50
 		self.blockSize = 10
 		self.nodes = set()
+	 
 
 	def register_node(self, address):
 		parsedUrl = urlparse(address)
@@ -50,9 +51,10 @@ class Blockchain (object):
 		return False
 
 	def minePendingTransactions(self, miner):
-		
+		amount = self.getBalance(miner) 
 		lenPT = len(self.pendingTransactions)
-		if(lenPT <= 1):
+		print(lenPT)
+		if(lenPT < 1):
 			print("Not enough transactions to mine! (Must be > 1)")
 			return False
 		else:
@@ -72,32 +74,45 @@ class Blockchain (object):
 				newBlock.mineBlock(self.difficulty)
 				self.chain.append(newBlock)
 			print("Mining Transactions Success!")
+			if(self.pendingTransactions[0].sender=="Miner Rewards"):
+				self.pendingTransactions = []
+				return True
+             
+			payMiner = Transaction("Miner Rewards", miner, self.minerRewards,amount);
 
-			payMiner = Transaction("Miner Rewards", miner, self.minerRewards);
 			self.pendingTransactions = [payMiner]
 		return True
+	
 
-	def addTransaction(self, sender, reciever, amt, keyString, senderKey):
+		  
+
+	def addTransaction(self, sender, reciever, amt, keyString, senderKey,personblnc):
+		
+
+		if(personblnc<amt ):
+			return False 
 		keyByte = keyString.encode("ASCII")
 		senderKeyByte = senderKey.encode("ASCII")
-
+		amount = self.getBalance(sender)
+       
 		#print(type(keyByte), keyByte)
 
 		key = RSA.import_key(keyByte)
 		senderKey = RSA.import_key(senderKeyByte)
-
+        
 		if not sender or not reciever or not amt:
 			print("transaction error 1")
 			return False
-
-		transaction = Transaction(sender, reciever, amt)
-
+        
+		transaction = Transaction(sender, reciever, amt,amount)
+        
 		transaction.signTransaction(key, senderKey)
 
 		if not transaction.isValidTransaction():
 			print("transaction error 2")
 			return False
 		self.pendingTransactions.append(transaction)
+		
 		return len(self.chain) + 1
 
 	def getLastBlock(self):
@@ -106,9 +121,8 @@ class Blockchain (object):
 
 	def addGenesisBlock(self):
 		tArr = []
-		tArr.append(Transaction("me", "you", 10))
+		tArr.append(Transaction("me", "you", 10,None))
 		genesis = Block(tArr, datetime.now().strftime("%m/%d/%Y, %H:%M:%S"), 0)
-
 		genesis.prev = "None"
 		return genesis
 
@@ -202,10 +216,12 @@ class Blockchain (object):
 			try:
 				for j in range(0, len(block.transactions)):
 					transaction = block.transactions[j]
+
 					if(transaction.sender == person):
 						balance -= transaction.amt
 					if(transaction.reciever == person):
 						balance += transaction.amt
+					
 			except AttributeError:
 				print("no transaction")
 		return balance + 100
@@ -218,11 +234,9 @@ class Block (object):
 		self.time = time
 		self.prev = ''
 		self.nonse = 0
-		self.gym = self.calculateGym()
 		self.hash = self.calculateHash()
 
-	def calculateGym(self):
-		return "24 hr"
+
 
 	def calculateHash(self):
 
@@ -230,7 +244,7 @@ class Block (object):
 
 		for transaction in self.transactions:
 			hashTransactions += transaction.hash
-		hashString = str(self.time) + hashTransactions + self.gym + self.prev + str(self.nonse)
+		hashString = str(self.time) + hashTransactions + self.prev + str(self.nonse)
 		hashEncoded = json.dumps(hashString, sort_keys=True).encode()
 		return hashlib.sha256(hashEncoded).hexdigest()
 
@@ -262,13 +276,14 @@ class Block (object):
 		return jsonpickle.encode(self)
 	
 class Transaction (object):
-	def __init__(self, sender, reciever, amt):
+	def __init__(self, sender, reciever, amt , amount):
 		self.sender = sender
 		self.reciever = reciever
 		self.amt = amt
 		self.time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S") #change to current date
 		self.hash = self.calculateHash()
-
+		self.amount = amount 
+        
 
 	def calculateHash(self):
 		hashString = self.sender + self.reciever + str(self.amt) + str(self.time)
@@ -280,6 +295,8 @@ class Transaction (object):
 		if(self.hash != self.calculateHash()):
 			return False
 		if(self.sender == self.reciever):
+			return False
+		if(self.amount<=0):
 			return False
 		if(self.sender == "Miner Rewards"):
 			#security : unfinished
